@@ -1,0 +1,12 @@
+# Local ZIP builds
+dist/
+stage/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini

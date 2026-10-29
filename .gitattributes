@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+# Color libraries are binary: never diff or normalise line endings
+*.acb binary
+*.ase binary
+
+# Keep the language bar honest
+assets/** linguist-documentation

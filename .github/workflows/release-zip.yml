@@ -1,0 +1,65 @@
+# Packs everything in color-books/ into ZIP files and publishes them on a
+# rolling GitHub release, so the README download buttons always serve the
+# current libraries:
+#   https://github.com/<owner>/<repo>/releases/latest/download/PANTONE-Color-Books.zip
+name: Build download ZIPs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "color-books/**"
+      - ".github/workflows/release-zip.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-zip
+  cancel-in-progress: true
+
+env:
+  TAG: colorbooks-latest
+  PACK: PANTONE Color Books
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ZIP files
+        run: |
+          mkdir -p dist "stage/$PACK"
+          cp -r color-books/. "stage/$PACK/"
+          cd stage
+          zip -r -X -9 ../dist/PANTONE-Color-Books.zip "$PACK"
+          zip -r -X -9 ../dist/PANTONE-Graphics.zip "$PACK/graphics" "$PACK/README.md"
+          zip -r -X -9 ../dist/PANTONE-Fashion-Home-Interiors.zip "$PACK/fashion-home-interiors" "$PACK/README.md"
+          cd ..
+          ls -l dist
+          {
+            echo "Every PANTONE color book in this repository, packed and ready for Adobe Illustrator 2024+."
+            echo
+            echo "| File | Contents |"
+            echo "|---|---|"
+            echo "| **PANTONE-Color-Books.zip** | All libraries |"
+            echo "| PANTONE-Graphics.zip | Graphics libraries (.acb) |"
+            echo "| PANTONE-Fashion-Home-Interiors.zip | Fashion, Home + Interiors libraries |"
+            echo
+            echo "Installation guide: see the README inside the ZIP or on the repository home page."
+            echo
+            echo "_Built automatically from ${GITHUB_SHA::7}._"
+          } > notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "$TAG" --cleanup-tag --yes || true
+          gh release create "$TAG" dist/*.zip \
+            --title "PANTONE Color Books (latest)" \
+            --notes-file notes.md \
+            --target "$GITHUB_SHA" \
+            --latest
